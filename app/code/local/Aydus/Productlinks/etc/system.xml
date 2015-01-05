@@ -1,0 +1,129 @@
+<?xml version="1.0"?>
+<!-- 
+/**
+ * Settings
+ *
+ * @category    Aydus
+ * @package     Aydus_Productlinks
+ * @author      Aydus <davidt@aydus.com>
+ */
+-->
+<config>
+    <sections>
+        <aydus_productlinks translate="label" module="aydus_productlinks">
+            <label>Product Links</label>
+            <tab>catalog</tab>
+            <frontend_type>text</frontend_type>
+            <sort_order>600</sort_order>
+            <show_in_default>1</show_in_default>
+            <show_in_website>1</show_in_website>
+            <show_in_store>1</show_in_store>
+            <groups>
+                <configuration translate="label" module="aydus_productlinks">
+                    <label>Configuration</label>
+                    <frontend_type>text</frontend_type>
+                    <sort_order>10</sort_order>
+                    <show_in_default>1</show_in_default>
+                    <show_in_website>1</show_in_website>
+                    <show_in_store>1</show_in_store>
+                    <fields>
+                        <num_order_days translate="label" module="aydus_productlinks">
+                            <label>Order Days</label>
+                            <frontend_type>text</frontend_type>
+                            <sort_order>1</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                            <comment><![CDATA[Number of days of sales data to get links for.]]></comment>
+                        </num_order_days>    
+                        <num_linked_products translate="label" module="aydus_productlinks">
+                            <label>Number Linked Products</label>
+                            <frontend_type>text</frontend_type>
+                            <sort_order>2</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                            <comment><![CDATA[Number of product links to assign (i.e. number of related products).]]></comment>
+                        </num_linked_products>
+                        <products_limit translate="label" module="aydus_productlinks">
+                            <label>Products Limit</label>
+                            <frontend_type>text</frontend_type>
+                            <sort_order>3</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                            <comment><![CDATA[To prevent memory leaks and crashes, limit the number of products to link at a time.]]></comment>
+                        </products_limit>
+                        <related translate="label" module="aydus_productlinks">
+                            <label>Related Products</label>
+                            <frontend_type>select</frontend_type>
+							<source_model>aydus_productlinks/system_config_source_datatypes</source_model>
+                            <sort_order>4</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                            <comment><![CDATA[Select the link data type.]]></comment>
+                        </related>  
+                        <upsell translate="label" module="aydus_productlinks">
+                            <label>Upsell Products</label>
+                            <frontend_type>select</frontend_type>
+							<source_model>aydus_productlinks/system_config_source_datatypes</source_model>
+                            <sort_order>5</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                        </upsell>    
+                        <cross_sell translate="label" module="aydus_productlinks">
+                            <label>Cross-sell Products</label>
+                            <frontend_type>select</frontend_type>
+							<source_model>aydus_productlinks/system_config_source_datatypes</source_model>
+                            <sort_order>6</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                        </cross_sell>                                                                       
+                        <frequency translate="label" module="aydus_productlinks">
+                            <label>Frequency</label>
+                            <frontend_type>select</frontend_type>
+                            <source_model>adminhtml/system_config_source_cron_frequency</source_model>
+                            <sort_order>8</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                            <comment><![CDATA[How often to run (once a month, week or day).]]></comment>
+                        </frequency>
+                        <month_day translate="label" module="aydus_productlinks">
+                            <label>Day of the Month</label>
+                            <frontend_type>text</frontend_type>
+                            <sort_order>9</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                            <comment><![CDATA[For month frequency, specify day of the month (1-31).]]></comment>
+                        </month_day>
+                        <week_day translate="label" module="aydus_productlinks">
+                            <label>Day of the Week</label>
+                            <frontend_type>select</frontend_type>
+                            <source_model>adminhtml/system_config_source_locale_weekdays</source_model>
+                            <sort_order>10</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                            <comment><![CDATA[For week frequency, specify day of the week.]]></comment>
+                        </week_day>                        
+                        <start_time translate="label" module="aydus_productlinks">
+                            <label>Start Time</label>
+                            <frontend_type>time</frontend_type>
+                            <sort_order>11</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                            <comment><![CDATA[Specify time of the day.]]></comment>
+                        </start_time>
+                    </fields>
+                </configuration>
+            </groups>
+        </aydus_productlinks>
+    </sections>
+</config>
+

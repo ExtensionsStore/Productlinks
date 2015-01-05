@@ -1,0 +1,4 @@
+app/code/local/Aydus/Productlinks          app/code/local/Aydus/Productlinks/
+app/etc/modules/Aydus_Productlinks.xml     app/etc/modules/
+
+@shell rm -rf $PROJECT/var/cache/*

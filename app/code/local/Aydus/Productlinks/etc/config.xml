@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+/**
+ * Generate product links via cron
+ * 
+ * @category    Aydus
+ * @package     Aydus_Productlinks
+ * @author      Aydus <davidt@aydus.com>
+ */
+-->
+<config>
+	<modules>
+		<Aydus_Productlinks>
+			<version>1.0.0</version>
+		</Aydus_Productlinks>
+	</modules>
+	<global>
+		<models>
+			<aydus_productlinks>
+				<class>Aydus_Productlinks_Model</class>
+                <resourceModel>aydus_productlinks_resource</resourceModel>
+			</aydus_productlinks>
+            <aydus_productlinks_resource>
+                <class>Aydus_Productlinks_Model_Resource</class>
+                <entities>
+                    <schedule>
+                        <table>aydus_productlinks_schedule</table>
+                    </schedule>
+                </entities>
+            </aydus_productlinks_resource>
+		</models>
+		<helpers>
+			<aydus_productlinks>
+				<class>Aydus_Productlinks_Helper</class>
+			</aydus_productlinks>
+		</helpers>
+		<resources>
+			<aydus_productlinks_setup>
+				<setup>
+					<module>Aydus_Productlinks</module>
+					<class>Mage_Eav_Model_Entity_Setup</class>
+				</setup>
+			</aydus_productlinks_setup>
+			<connection>
+				<use>core_setup</use>
+			</connection>
+		</resources>
+	</global>
+	<crontab>
+		<jobs>
+			<aydus_productlinks_schedule>
+                <schedule>
+                    <cron_expr>*/5 * * * *</cron_expr>
+                </schedule>
+				<run>
+					<model>aydus_productlinks/cron::scheduleJobs</model>
+				</run>
+			</aydus_productlinks_schedule>
+			<aydus_productlinks_related>
+                <schedule>
+                    <cron_expr>0 5 31 2 *</cron_expr>
+                </schedule>
+				<run>
+					<model>aydus_productlinks/cron::runRelated</model>
+				</run>
+			</aydus_productlinks_related>
+			<aydus_productlinks_upsell>
+                <schedule>
+                    <cron_expr>0 5 31 2 *</cron_expr>
+                </schedule>
+				<run>
+					<model>aydus_productlinks/cron::runUpsell</model>
+				</run>
+			</aydus_productlinks_upsell>
+			<aydus_productlinks_crosssell>
+                <schedule>
+                    <cron_expr>0 5 31 2 *</cron_expr>
+                </schedule>
+				<run>
+					<model>aydus_productlinks/cron::runCrossSell</model>
+				</run>
+			</aydus_productlinks_crosssell>
+		</jobs>
+	</crontab>
+    <default>
+        <aydus_productlinks>
+            <configuration>
+	            <num_order_days>30</num_order_days>
+                <num_linked_products>8</num_linked_products>
+                <products_limit>100</products_limit>
+            </configuration>
+        </aydus_productlinks>
+    </default>	
+</config>

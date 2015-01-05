@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<!-- 
+/**
+ * Product Links (upsell, related, cross-sell) module
+ *
+ * @category    Aydus
+ * @package     Aydus_Productlinks
+ * @author      Aydus <davidt@aydus.com>
+ */
+-->
+<config>
+    <modules>
+        <Aydus_Productlinks>
+            <active>true</active>
+            <codePool>local</codePool>
+        </Aydus_Productlinks>
+    </modules>
+</config>

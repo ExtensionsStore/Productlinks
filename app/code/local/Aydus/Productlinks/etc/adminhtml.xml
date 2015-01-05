@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+/**
+ * System configuration acl
+ *
+ * @category    Aydus
+ * @package     Aydus_Productlinks
+ * @author      Aydus <davidt@aydus.com>
+ */
+-->
+<config>
+    <acl>
+        <resources>
+            <admin>
+                <children>
+                    <system>
+                        <children>
+                            <config>
+                                <children>
+                                    <aydus_productlinks translate="title" module="aydus_productlinks">
+                                        <title>Productlinks settings</title>
+                                    </aydus_productlinks>
+                                </children>
+                            </config>
+                        </children>
+                    </system>
+                </children>
+            </admin>
+        </resources>
+    </acl>
+</config>
