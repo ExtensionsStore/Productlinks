@@ -1,0 +1,127 @@
+config:
+  default/aydus_productlinks/configuration/related: b
+eav:
+  catalog_product:
+    - entity_id: 1 # main product
+      attribute_set_id: 4
+      type_id: simple
+      sku: test-product
+      name: Test Product
+      short_description: Test product
+      description: Test product
+      url_key: test-product
+      website_ids: 
+        - 1
+      category_ids: 
+        - 2
+      price: 10.00
+      tax_class_id: 2
+      status: 1
+      visibility: 4
+    - entity_id: 100 # 3 existing links
+      attribute_set_id: 4
+      status: 1
+      visibility: 4
+    - entity_id: 101
+      attribute_set_id: 4
+      status: 1
+      visibility: 4
+    - entity_id: 102
+      attribute_set_id: 4
+      status: 1
+      visibility: 4
+    - entity_id: 501 # 8 new links
+      attribute_set_id: 4
+      status: 1
+      visibility: 4
+    - entity_id: 502
+      attribute_set_id: 4
+      status: 1
+      visibility: 4
+    - entity_id: 503
+      attribute_set_id: 4
+      status: 1
+      visibility: 4
+    - entity_id: 504
+      attribute_set_id: 4
+      status: 1
+      visibility: 4
+    - entity_id: 505
+      attribute_set_id: 4
+      status: 1
+      visibility: 4
+    - entity_id: 506
+      attribute_set_id: 4
+      status: 1
+      visibility: 4
+    - entity_id: 507
+      attribute_set_id: 4
+      status: 1
+      visibility: 4
+    - entity_id: 508
+      attribute_set_id: 4
+      status: 1
+      visibility: 4
+
+tables:
+  catalog/product_link:
+    - link_id: 1
+      product_id: 1
+      linked_product_id: 100
+      link_type_id: 1 # related
+    - link_id: 2
+      product_id: 1
+      linked_product_id: 101
+      link_type_id: 1
+    - link_id: 3
+      product_id: 1
+      linked_product_id: 102
+      link_type_id: 1      
+      
+  sales/order:
+    - entity_id: 1
+      increment_id: 10000001
+      store_id: 1
+      state: processing
+      status: processing
+      created_at: 2015-05-27 12:00:00
+      updated_at: 2015-05-27 12:00:01
+      
+  sales/order_item:
+    - item_id : 1
+      order_id: 1
+      product_id: 1
+      created_at: 2015-05-27 20:01:35
+    - item_id : 501
+      order_id: 1
+      product_id: 501   
+      created_at: 2015-05-27 20:01:35
+    - item_id : 502
+      order_id: 1
+      product_id: 502  
+      created_at: 2015-05-27 20:01:35
+    - item_id : 503
+      order_id: 1
+      product_id: 503   
+      created_at: 2015-05-27 20:01:35
+    - item_id : 504
+      order_id: 1
+      product_id: 504   
+      created_at: 2015-05-27 20:01:35
+    - item_id : 505
+      order_id: 1
+      product_id: 505   
+      created_at: 2015-05-27 20:01:35
+    - item_id : 506
+      order_id: 1
+      product_id: 506   
+      created_at: 2015-05-27 20:01:35
+    - item_id : 507
+      order_id: 1
+      product_id: 507   
+      created_at: 2015-05-27 20:01:35
+    - item_id : 508
+      order_id: 1
+      product_id: 508  
+      created_at: 2015-05-27 20:01:35
+               

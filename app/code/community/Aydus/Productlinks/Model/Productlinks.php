@@ -10,7 +10,22 @@
 
 class Aydus_Productlinks_Model_Productlinks extends Mage_Core_Model_Abstract 
 {
-		
+    protected $_read;
+    protected $_write;
+    protected $_logTable;
+    
+    protected $_position = 0;
+    protected $_numLinkedProducts; 
+    
+    protected function _construct()
+    {
+        $this->_read = Mage::getSingleton('core/resource')->getConnection('core_read');
+        $this->_write = Mage::getSingleton('core/resource')->getConnection('core_write');
+        $prefix = Mage::getConfig()->getTablePrefix();
+        $this->_logTable = $prefix."aydus_productlinks_log";
+		$this->_numLinkedProducts =  Mage::getStoreConfig('aydus_productlinks/configuration/num_linked_products');
+    }
+    
 	/**
 	 * Update product links
 	 * 
@@ -19,143 +34,47 @@ class Aydus_Productlinks_Model_Productlinks extends Mage_Core_Model_Abstract
 	 * @return array
 	 */
 	public function assign($linkType)
-	{
-		$read = Mage::getSingleton('core/resource')->getConnection('core_read');
-		$write = Mage::getSingleton('core/resource')->getConnection('core_write');
-		$prefix = Mage::getConfig()->getTablePrefix();
-		$logTable = $prefix."aydus_productlinks_log";
-		//clear out the previous day's entries
-		$curDate = date('Y-m-d');
-		$write->query("DELETE FROM $logTable WHERE link_type = '$linkType' AND date_updated < '$curDate'");
-		$count = $read->fetchOne("SELECT COUNT(*) FROM $logTable");
-		if ($count == 0){
-			$write->query("TRUNCATE TABLE $logTable");
-		}
+	{			
+		$timeStart = microtime(true);
+	    $products = $this->_getProductsToLink();
 				
-		$products = $this->_getProductsToLink();
-		
-		$this->_setIndexerMode("manual");
-		
 		$productsCount = $products->getSize();
 		$productsProcessed = 0;
 		
 		if ($productsCount > 0){
 			
-			$time_start = microtime(true);
-			$numLinkedProducts =  Mage::getStoreConfig('productlinks/configuration/num_linked_products');
-			
 			foreach ($products as $product){
 				
 				$productId = $product->getId();
-				$product->load($productId);
 				$productLinksData = array();
-				$productLinkIds = array();
-				$now = date('Y-m-d H:i:s');
+				$this->_position = 0;
 				
-				switch ($linkType){
-					case 'u' :
-						$productLinkIds = $product->getUpSellProductIds();
-						break;
-					case 'r' :
-						$productLinkIds = $product->getRelatedProductIds();
-						break;
-					case 'c' :
-						$productLinkIds = $product->getCrossSellProductIds();
-						break;
-				}
+				//existing links
+				$productLinksData = $this->getExistingLinks($linkType, $product, $productLinksData);
 								
-				$productLinks = $this->_getProductLinks($linkType, $productId);
+				//new links
+				$productLinksData = $this->getNewLinks($linkType, $product, $productLinksData);
 				
-				//assign links
-				if ($productLinks && $productLinks->getSize()){
-											
-					if ($productLinks->getSize() <= $numLinkedProducts + 1){
-						$productLinks->setPageSize(100);
-					}else {
-						$productLinks->setPageSize($numLinkedProducts);
-					}
-					
-					$selectStr = (string)$productLinks->getSelect();
-					
-					$position = 0;
-
-					foreach ($productLinks as $productLink){
-						
-						$productLinkId = $productLink->getProductLinkId();
-
-						if ($productId == $productLinkId){
-							continue;
-						}
-														
-						$position++;
-						$productLinksData[$productLinkId] = array( 'position' => $position );
-							
-                        //log the linked product
-                        $sql = "INSERT INTO $logTable
-                            (link_type, product_id, product_link_id, date_created, date_updated, position)
-                            VALUES('$linkType', '$productId', '$productLinkId', '$now', '$now', '$position')";
-                        
-						try {
-                        	$write->query($sql);
-                        	 
-                        } catch(Exception $e){
-                        	Mage::log($e->getMessage(),null, 'aydus_productlinks.log');
-                        }
-					}
-				}
-				
-				//overwrite current links
-				if (count($productLinkIds) > 0 || count($productLinksData) > 0){
-					
-					try {
-						if ($linkType == 'u'){
-							$product->setUpSellLinkData($productLinksData);
-						} else if ($linkType == 'r') {
-							$product->setRelatedLinkData($productLinksData);
-						} else if ($linkType == 'c') {
-							$product->setCrossSellLinkData($productLinksData);
-						}
-							
-						$product->save();
-							
-					} catch(Exception $e){
-					
-						Mage::log($e->getMessage(),null, 'aydus_productlinks.log');
-						Mage::log($product->getId()."-".implode(',',array_keys($productLinksData)),null, 'aydus_productlinks.log');
-						if (php_sapi_name() == 'cli'){
-							echo $e->getMessage()."\n";
-						}
-					}
-				} 
+				//save links
+				$productLinksData = $this->saveLinks($linkType, $product, $productLinksData);
 				
 				//log as processed
-				$sql = "INSERT INTO $logTable
-				(link_type, product_id, product_link_id, date_created, date_updated, position)
-				VALUES('$linkType', '$productId', 0, '$now', '$now', 0)";
-					
-				try {
-					$write->query($sql);
-				
-				} catch(Exception $e){
-					Mage::log($e->getMessage(),null, 'aydus_productlinks.log');
-				}
-						
-				$time_end = microtime(true);
-				$time = $time_end - $time_start;
-				$productsProcessed++;
-				if (php_sapi_name() == 'cli'){
-					echo "$productsProcessed-$productsCount-$time\n";
-				}
+                $this->_logProductLink($linkType, $productId, 0, 0);
+                $productsProcessed++;
+                if (php_sapi_name() == 'cli'){
+                    echo "$productsProcessed. product id: $productId, linked products: ".count($productLinksData)."\n";
+                }                
 			}
+			
 		}
 
-		$this->_setIndexerMode();
-		$productsLinked = $read->fetchOne("SELECT COUNT(DISTINCT product_id) FROM $logTable WHERE link_type = '$linkType' AND product_link_id > 0");
-		$linkedProducts = $read->fetchOne("SELECT COUNT(*) FROM $logTable WHERE link_type = '$linkType' AND product_link_id > 0");
-		
+		$productsLinked = $this->_read->fetchOne("SELECT COUNT(DISTINCT product_id) FROM $this->_logTable WHERE link_type = '$linkType' AND product_link_id > 0");
+		$linkedProducts = $this->_read->fetchOne("SELECT COUNT(*) FROM $this->_logTable WHERE link_type = '$linkType' AND product_link_id > 0");
 		$missed = $productsCount - $productsProcessed;
+		$timeEnd = microtime(true);
+		$totalTime = $timeEnd - $timeStart;
 		
-		$result = "Job has completed. Products: $productsCount, processed: $productsProcessed, missed: $missed; products linked: $productsLinked, linked products: $linkedProducts";
+		$result = "Job has completed. Products: $productsCount, processed: $productsProcessed, missed: $missed; products linked: $productsLinked, linked products: $linkedProducts, total time: $totalTime";
 		if (php_sapi_name() == 'cli'){
 			echo "$result\n";
 		}
@@ -165,20 +84,204 @@ class Aydus_Productlinks_Model_Productlinks extends Mage_Core_Model_Abstract
 	}
 	
 	/**
+	 * 
+	 * @param string $linkType
+	 * @param Mage_Catalog_Model_Product $product
+	 * @param array $productLinksData
+	 * @return array
+	 */
+	public function getExistingLinks($linkType, $product, $productLinksData)
+	{
+		$productId = $product->getId();
+		
+	    switch ($linkType){
+	        case 'u' :
+	            $productLinks = $product->getUpSellProducts();
+	            break;
+	        case 'r' :
+	            $productLinks = $product->getRelatedProducts();
+	            break;
+	        case 'c' :
+	            $productLinks = $product->getCrossSellProducts();
+	            break;
+	    }
+	    	    
+	    if (is_array($productLinks) && count($productLinks)>0){
+	    
+	        foreach ($productLinks as $productLink){
+	    
+	            $productLinkId = $productLink->getId();
+	    
+	            $sql = "SELECT id FROM $this->_logTable WHERE link_type = '$linkType' AND product_id = '$productId' AND product_link_id = '$productLinkId'";
+	            $id = (int)$this->_read->fetchOne($sql);
+	             
+	            //don't include the ones we already linked
+	            if (!$id){
+	                 
+	                $position = $productLink->getPosition();
+	                $position = ($position) ? $position : ++$this->_position;
+	                $productLinksData[$productLinkId] = array( 'position' => $position );
+	                	
+	            }
+	    
+	        }
+	    
+	        //get last position
+	        if (count($productLinksData)>0){
+	    
+	            foreach ($productLinksData as $productLinkData){
+	    
+	                if ($productLinkData['position'] > $this->_position){
+	                    $this->_position = $productLinkData['position'];
+	                }
+	    
+	            }
+	             
+	        }
+	    
+	    }	  
+
+	    return $productLinksData;
+	}
+	
+	/**
+	 *
+	 * @param string $linkType
+	 * @param Mage_Catalog_Model_Product $product
+	 * @param array $productLinksData
+	 * @return array
+	 */
+	public function getNewLinks($linkType, $product, $productLinksData)
+	{
+		$productId = $product->getId();
+		
+	    $this->_write->query("DELETE FROM $this->_logTable WHERE link_type ='$linkType' AND product_id = '$productId'  ");
+	    $productLinks = $this->getProductLinks($linkType, $productId);
+	    
+	    if ($productLinks && $productLinks->getSize()){
+	        	
+	        if ($productLinks->getSize() <= $this->_numLinkedProducts + 1){
+	            	
+	            $productLinks->setPageSize(100);
+	    
+	        } else {
+	            	
+	            $productLinks->setPageSize($this->_numLinkedProducts);
+	        }
+	        	
+	        foreach ($productLinks as $productLink){
+	    
+	            $productLinkId = $productLink->getProductLinkId();
+	    
+	            if ($productId == $productLinkId || in_array($productLinkId, array_keys($productLinksData))){
+	                continue;
+	            }
+	    
+	            $this->_position++;
+	            $productLinksData[$productLinkId] = array( 'position' => $this->_position );
+	    
+	            $this->_logProductLink($linkType, $productId, $productLinkId, $this->_position);
+	    
+	        }
+	    
+	    }	    
+	    
+	    return $productLinksData;
+	}
+	
+	/**
+	 *
+	 * @param string $linkType
+	 * @param Mage_Catalog_Model_Product $product
+	 * @param array $productLinksData
+	 * @return Mage_Catalog_Model_Resource_Product_Link_Product_Collection
+	 */	
+	public function saveLinks($linkType, $product, $productLinksData)
+	{
+	    $linksCollection = null;
+		$productId = $product->getId();
+		
+	    if (count($productLinksData) > 0){
+	    
+	        $productLink = Mage::getModel('catalog/product_link');
+	        	
+	        try {
+	            	
+	            if ($linkType == 'u'){
+	    
+	                $product->setUpSellLinkData($productLinksData);
+	                $productLink->useUpSellLinks();
+	                	
+	            } else if ($linkType == 'r') {
+	    
+	                $product->setRelatedLinkData($productLinksData);
+	                $productLink->useRelatedLinks();
+	                	
+	            } else if ($linkType == 'c') {
+	    
+	                $product->setCrossSellLinkData($productLinksData);
+	                $productLink->useCrossSellLinks();
+	            }
+	            	
+	            $productLink->saveProductRelations($product);
+	            $linksCollection = Mage::getModel('catalog/product_link')->getCollection();
+	            $linksCollection->addFieldToFilter('product_id', $productId);
+	            	
+	        } catch(Exception $e){
+	            	
+	            Mage::log($e->getMessage(),null, 'aydus_productlinks.log');
+	            Mage::log($productId."-".implode(',',array_keys($productLinksData)),null, 'aydus_productlinks.log');
+	            if (php_sapi_name() == 'cli'){
+	                echo $e->getMessage()."\n";
+	            }
+	        }
+	    }	   
+
+	    return $linksCollection;
+	}
+	
+	/**
+	 * 
+	 * @param string $linkType
+	 * @param int $productId
+	 * @param int $productLinkId
+	 * @param int $position
+	 */
+	protected function _logProductLink($linkType, $productId, $productLinkId=0, $position=0)
+	{
+	    $now = date('Y-m-d H:i:s');
+	    
+        $sql = "INSERT INTO $this->_logTable
+            (link_type, product_id, product_link_id, position, date_linked)
+	        VALUES('$linkType', '$productId', '$productLinkId', '$position', '$now')";
+
+	    try {
+	        $this->_write->query($sql);
+	    
+	    } catch(Exception $e){
+	        Mage::log($e->getMessage(),null, 'aydus_productlinks.log');
+	        Mage::log($sql,null, 'aydus_productlinks.log');
+	    }	    
+	}
+		
+	/**
 	 * Get product collection, limited by not already processed (and logged) and not a child product
 	 *
 	 * @return Mage_Catalog_Model_Resource_Product_Collection
 	 */
 	protected function _getProductsToLink()
 	{
+	    $curDate = date('Y-m-d');
 		$collection = $this->getProductsCollection();
 		$select = $collection->getSelect();
 		$prefix = Mage::getConfig()->getTablePrefix();
-		$select->where('`e`.`entity_id` NOT IN (SELECT DISTINCT(`l`.`product_id`) FROM `'.$prefix.'aydus_productlinks_log` AS l)');
+		$select->where('`e`.`entity_id` NOT IN (SELECT DISTINCT(`l`.`product_id`) FROM `'.$prefix.'aydus_productlinks_log` AS l WHERE date_linked >= "'.$curDate.'")');
 		$select->where('`e`.`entity_id` NOT IN (SELECT `sl`.`product_id` FROM `'.$prefix.'catalog_product_super_link` AS sl)');
 		$select->where('`e`.`entity_id` NOT IN (SELECT `r`.`child_id` FROM `'.$prefix.'catalog_product_relation` AS r)');
 		$productsLimit = Mage::getStoreConfig('aydus_productlinks/configuration/products_limit');
 		$collection->setPageSize($productsLimit);
+		
+		$selectStr = (string)$collection->getSelect();
 		
 		return $collection;
 	}
@@ -197,14 +300,15 @@ class Aydus_Productlinks_Model_Productlinks extends Mage_Core_Model_Abstract
 		
 		return $collection;
 	}
-	
+		
 	/**
+	 * Get product links by configured type
 	 * 
 	 * @param int $linkType
 	 * @param int $productId
 	 * @return Mage_Catalog_Model_Resource_Product_Collection
 	 */
-	protected function _getProductLinks($linkType, $productId)
+	public function getProductLinks($linkType, $productId)
 	{
 		$collection = null;
 		$numOrderDays = Mage::getStoreConfig('aydus_productlinks/configuration/num_order_days');
@@ -240,7 +344,7 @@ class Aydus_Productlinks_Model_Productlinks extends Mage_Core_Model_Abstract
 				$select->join(array(
 						"product_table"=>Mage::getSingleton('core/resource')->getTableName('catalog/product')),
 						"`join_table`.product_id = `product_table`.entity_id",
-						array("sku")
+						array("active_product_id" => 'entity_id')
 				);
 				$collection->addAttributeToFilter('`main_table`.created_at',array("from"=>$sinceDate));
 				$collection->addAttributeToFilter('`main_table`.product_id', $productId);
@@ -279,28 +383,4 @@ class Aydus_Productlinks_Model_Productlinks extends Mage_Core_Model_Abstract
 		return $collection;
 	}
 	
-	protected function _setIndexerMode($selectMode = NULL) 
-	{
-		$validModes = array("manual", "real_time");
-		
-		if ($selectMode !== NULL && !in_array($selectMode, $validModes)){
-			throw new Exception("Invalid mode $selectMode. Valid indexer modes are ". implode(",",$validModes));
-		}
-		
-		$mode = ($selectMode === NULL || $selectMode === "real_time") ? Mage_Index_Model_Process::MODE_REAL_TIME : Mage_Index_Model_Process::MODE_MANUAL;
-		
-		$pCollection = Mage::getSingleton('index/indexer')->getProcessesCollection();
-		foreach ($pCollection as $process) {
-			$process->setMode($mode)->save();
-			if ($mode == Mage_Index_Model_Process::MODE_REAL_TIME){
-				$process->reindexAll();
-			}
-		}
-		
-		if ($mode == Mage_Index_Model_Process::MODE_REAL_TIME){
-			$type = "block_html";
-			$tags = Mage::app()->getCacheInstance()->cleanType($type);
-			Mage::dispatchEvent('adminhtml_cache_refresh_type', array('type' => $type));
-		}
-	}
 }

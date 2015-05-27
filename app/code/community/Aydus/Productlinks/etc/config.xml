@@ -11,10 +11,33 @@
 <config>
 	<modules>
 		<Aydus_Productlinks>
-			<version>1.0.0</version>
+			<version>1.1.0</version>
 		</Aydus_Productlinks>
 	</modules>
+    <phpunit>
+        <suite>
+            <modules>
+                <Aydus_Productlinks />
+            </modules>
+        </suite>
+    </phpunit>	
+	<admin>
+	    <routers>
+	        <adminhtml>
+	            <args>
+	                <modules>
+	                    <Aydus_Productlinks before="Mage_Adminhtml">Aydus_Productlinks_Adminhtml</Aydus_Productlinks>
+	                </modules>
+	            </args>
+	        </adminhtml>
+	    </routers>
+	</admin>    
 	<global>
+		<blocks>
+			<aydus_productlinks>
+				<class>Aydus_Productlinks_Block</class>
+			</aydus_productlinks>
+		</blocks>	
 		<models>
 			<aydus_productlinks>
 				<class>Aydus_Productlinks_Model</class>
@@ -38,7 +61,7 @@
 			<aydus_productlinks_setup>
 				<setup>
 					<module>Aydus_Productlinks</module>
-					<class>Mage_Eav_Model_Entity_Setup</class>
+					<class>Mage_Core_Model_Resource_Setup</class>
 				</setup>
 			</aydus_productlinks_setup>
 			<connection>
@@ -87,7 +110,7 @@
             <configuration>
 	            <num_order_days>30</num_order_days>
                 <num_linked_products>8</num_linked_products>
-                <products_limit>100</products_limit>
+                <products_limit>5000</products_limit>
             </configuration>
         </aydus_productlinks>
     </default>	
