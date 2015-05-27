@@ -1,0 +1,18 @@
+{
+    "name": "aydus/productlinks",
+    "license": "GPL-3.0",
+    "type": "magento-module",
+    "description": "Automate adding related, upsell and cross-sell links to your catalog based on most bought and most viewed.",
+    "homepage": "https://github.com/aydus/Productlinks.git",
+    "require": {
+        "php": ">=5.3",
+        "magento-hackathon/magento-composer-installer": "*"
+    },
+    "authors": [
+        {
+            "name": "David Tay",
+            "email": "davidt@aydus.com",
+            "role": "Author/Maintainer"
+        }
+    ]
+}
